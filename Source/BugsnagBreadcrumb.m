@@ -59,6 +59,8 @@ NSString *BSGBreadcrumbTypeValue(BSGBreadcrumbType type) {
 @interface BugsnagBreadcrumb ()
 
 - (NSDictionary *_Nullable)objectValue;
+
+@property (nonatomic,readonly,strong) NSString* dateRepresentation;
 @end
 
 @implementation BugsnagBreadcrumb
@@ -66,6 +68,7 @@ NSString *BSGBreadcrumbTypeValue(BSGBreadcrumbType type) {
 - (instancetype)init {
     if (self = [super init]) {
         _timestamp = [NSDate date];
+        _dateRepresentation = [[Bugsnag payloadDateFormatter] stringFromDate:_timestamp];
         _name = BSGBreadcrumbDefaultName;
         _type = BSGBreadcrumbTypeManual;
         _metadata = @{};
@@ -78,16 +81,13 @@ NSString *BSGBreadcrumbTypeValue(BSGBreadcrumbType type) {
 }
 
 - (NSDictionary *)objectValue {
-    NSString* timestamp = [[Bugsnag payloadDateFormatter] stringFromDate:self.timestamp];
-    if (timestamp && self.name.length > 0) {
-        NSMutableDictionary *data = @{
+    if (self.dateRepresentation && self.name.length > 0) {
+        return @{
             @"name": self.name,
-            @"timestamp": timestamp,
-            @"type": BSGBreadcrumbTypeValue(self.type)
-        }.mutableCopy;
-        if (self.metadata)
-            data[@"metaData"] = self.metadata;
-        return data;
+            @"timestamp": self.dateRepresentation,
+            @"type": BSGBreadcrumbTypeValue(self.type),
+            @"metaData": self.metadata ?: @{}
+        };
     }
     return nil;
 }
@@ -173,17 +173,7 @@ NSUInteger BreadcrumbsDefaultCapacity = 20;
     NSMutableArray* contents = [[NSMutableArray alloc] initWithCapacity:[self count]];
     [self.lock lock];
     for (BugsnagBreadcrumb* crumb in self.breadcrumbs) {
-        NSDictionary *objectValue = [crumb objectValue];
-        NSError *error = nil;
-        @try {
-            NSData* data = [NSJSONSerialization dataWithJSONObject:objectValue options:0 error:&error];
-            if (data.length <= BSGBreadcrumbMaxByteSize)
-                [contents addObject:objectValue];
-            else
-                NSLog(@"Dropping Bugsnag breadcrumb (%@) exceeding %lu byte size limit", crumb.name, (unsigned long)BSGBreadcrumbMaxByteSize);
-        } @catch (NSException *exception) {
-            NSLog(@"Unable to serialize breadcrumb for Bugsnag: %@", error);
-        }
+        [contents addObject:[crumb objectValue]];
     }
     [self.lock unlock];
     return contents;
