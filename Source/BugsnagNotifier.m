@@ -73,16 +73,16 @@ static struct bugsnag_data_t g_bugsnag_data;
  */
 void BSSerializeDataCrashHandler(const KSCrashReportWriter *writer) {
     if (g_bugsnag_data.configJSON) {
-        writer->addJSONElement(writer, "config", g_bugsnag_data.configJSON, true);
+        writer->addJSONElement(writer, "config", g_bugsnag_data.configJSON);
     }
     if (g_bugsnag_data.metaDataJSON) {
-        writer->addJSONElement(writer, "metaData", g_bugsnag_data.metaDataJSON, true);
+        writer->addJSONElement(writer, "metaData", g_bugsnag_data.metaDataJSON);
     }
     if (g_bugsnag_data.stateJSON) {
-        writer->addJSONElement(writer, "state", g_bugsnag_data.stateJSON, true);
+        writer->addJSONElement(writer, "state", g_bugsnag_data.stateJSON);
     }
     if (g_bugsnag_data.userOverridesJSON) {
-        writer->addJSONElement(writer, "overrides", g_bugsnag_data.userOverridesJSON, true);
+        writer->addJSONElement(writer, "overrides", g_bugsnag_data.userOverridesJSON);
     }
     if (g_bugsnag_data.onCrash) {
         g_bugsnag_data.onCrash(writer);
